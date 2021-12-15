@@ -1,0 +1,34 @@
+stages:
+  - deploy-dev
+
+before_script:
+  - go version
+  - go env
+  - go env -w GO111MODULE=on
+  - go env -w GOPROXY="https://goproxy.io/"
+  - go mod tidy
+
+deploy-dev:
+  stage: deploy-dev
+  only:
+    - develop
+  script:
+    - make banwenyuctl
+    #    - rsync -av ./config.dev.toml /workspace/laradock/banwenyu/bin/config.toml
+    #    - rsync -av ./start.sh /workspace/laradock/banwenyu/bin/start.sh
+    #    - rm -rf /workspace/laradock/banwenyu/bin/storage/cache
+    #    - docker-compose -f /workspace/laradock/docker-compose.yml stop banwenyu
+    #    - rsync -av ./dist/banwenyuctl /workspace/laradock/banwenyu/bin/banwenyuctl
+    #    - docker-compose -f /workspace/laradock/docker-compose.yml start banwenyu
+    - rm -rf /opt/app/banwenyu/.env
+    - echo "APP_ENV=dev" > /opt/app/banwenyu/.env
+    - rsync -av ./dist/banwenyuctl /opt/app/banwenyu/banwenyuctl
+    - rsync -av ./config.dev.toml /opt/app/banwenyu/config.dev.toml
+    - cd /opt/app/banwenyu/
+    - APP_ENV=dev /opt/app/banwenyu/banwenyuctl migrate --conn default
+    - APP_ENV=dev /opt/app/banwenyu/banwenyuctl db-seed --conn default
+    - rm -rf /opt/app/banwenyu/storage/cache
+    - APP_ENV=dev supervisorctl restart banwenyu
+
+  tags:
+    - banwenyu-dev

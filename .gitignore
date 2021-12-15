@@ -1,0 +1,8 @@
+.idea
+storage
+.env
+config.local.toml
+.agollo
+.DS_Store
+dist
+spider.go
